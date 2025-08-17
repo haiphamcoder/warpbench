@@ -1,0 +1,34 @@
+[package]
+name = "warpbench"
+version = "0.1.0"
+edition = "2024"
+authors = ["Hai Pham Ngoc <ngochai285nd@gmail.com>"]
+description = "A modern HTTP benchmarking tool written in Rust"
+license = "MIT"
+repository = "https://github.com/haiphamcoder/warpbench"
+
+[dependencies]
+# Error handling
+anyhow = "1.0.99"
+thiserror = "2.0.14"
+
+# Command line parsing
+clap = { version = "4.5.45", features = ["derive"] }
+
+# Time formatting
+humantime = "2.2.0"
+
+# System information
+num_cpus = "1.17.0"
+
+# Scripting engine
+rhai = "1.22.2"
+
+# Asynchronous runtime
+tokio = { version = "1.47.1", features = ["full"] }
+
+# Logging and tracing
+tracing-subscriber = "0.3.19"
+
+# URL parsing
+url = "2.5.4"
