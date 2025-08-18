@@ -9,7 +9,7 @@ permissions:
   contents: write
 
 env:
-  BIN_NAME: ""   # nếu trống, lấy tên package đầu tiên trong Cargo.toml
+  BIN_NAME: ""
 
 jobs:
   create-release:
@@ -30,6 +30,8 @@ jobs:
     name: Build Linux .deb (${{ matrix.codename }})
     needs: create-release
     runs-on: ubuntu-latest
+    env:
+      HOME: /root
     strategy:
       fail-fast: false
       matrix:
@@ -48,7 +50,6 @@ jobs:
             arch: amd64
     container:
       image: ${{ matrix.image }}
-      options: --user 0:0
     steps:
       - uses: actions/checkout@v4
 
@@ -63,8 +64,10 @@ jobs:
       - name: Install Rust (stable) via rustup
         shell: bash
         run: |
-          curl https://sh.rustup.rs -sSf | sh -s -- -y
-          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+          # Cài rustup vào $HOME (/root)
+          curl https://sh.rustup.rs -sSf | sh -s -- -y --profile minimal
+          . "$HOME/.cargo/env"                             # load env cho current shell
+          echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"        # add vào PATH cho các step sau
           rustc -V && cargo -V
           rustup target add ${{ matrix.target }}
 
@@ -82,26 +85,27 @@ jobs:
 
       - name: Install cargo-deb
         shell: bash
-        run: cargo install cargo-deb
+        run: |
+          . "$HOME/.cargo/env"
+          cargo install cargo-deb
 
       - name: Build .deb
         shell: bash
         run: |
+          . "$HOME/.cargo/env"
           cargo build --release --target ${{ matrix.target }}
           cargo deb
           mkdir -p dist
           DEB_FILE=$(ls target/debian/*.deb | head -n 1)
           OUT="dist/${PKG_NAME}-${VERSION}-linux-${{ matrix.arch }}-${{ matrix.codename }}.deb"
           cp "$DEB_FILE" "$OUT"
-          echo "Built: $OUT"
           ls -l dist
 
       - name: Upload artifact (.deb)
         uses: actions/upload-artifact@v4
         with:
           name: linux-${{ matrix.codename }}
-          path: |
-            dist/*.deb
+          path: dist/*.deb
 
   # ======================= MACOS (DMG) =======================
   build-macos:
