@@ -161,9 +161,30 @@ jobs:
           Copy-Item $exe $out
           "ASSET_PATH=$out" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
 
-      # ===================== Upload to Release =====================
-      - name: Upload asset to GitHub Release
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.label }}
+          path: |
+            dist/**
+
+  publish:
+    name: Publish assets to Release
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          path: ./dist-all
+
+      - name: Debug
+        run: ls -R ./dist-all
+
+      - name: Upload to Github Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}
-          files: ${{ env.ASSET_PATH }}
+          name: Release ${{ github.ref_name }}
+          generate_release_notes: true
+          files: ./dist-all/**
