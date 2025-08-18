@@ -48,6 +48,14 @@ pub struct Cli {
     /// Rate limit (requests per second)
     #[arg(long)]
     rate_limit: Option<u64>,
+
+    /// Enable verbose logging
+    #[arg(short = 'v', long)]
+    verbose: bool,
+
+    /// Quiet mode - suppress info logs
+    #[arg(short = 'q', long)]
+    quiet: bool,
 }
 
 impl Cli {
@@ -83,6 +91,8 @@ impl Cli {
             rate_limit: cli.rate_limit,
             method: cli.method,
             body: cli.body,
+            verbose: cli.verbose,
+            quiet: cli.quiet,
         })
     }
 }

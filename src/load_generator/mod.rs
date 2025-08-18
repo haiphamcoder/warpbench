@@ -5,6 +5,7 @@ use crate::{
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 use tokio::sync::Barrier;
+use tokio::time::interval;
 use tracing::{info, warn};
 
 pub struct LoadGenerator {
@@ -37,6 +38,11 @@ impl LoadGenerator {
     pub async fn run(&self) -> Result<BenchmarkResult> {
         info!("Starting benchmark with {} threads and {} connections", 
               self.config.threads, self.config.connections);
+        
+        // Show progress message
+        if !self.config.quiet {
+            eprintln!("Starting {} worker threads...", self.config.threads);
+        }
         
         let start_time = Instant::now();
         
@@ -80,8 +86,62 @@ impl LoadGenerator {
         start_barrier.wait().await;
         info!("All worker threads ready, starting benchmark");
         
+        if !self.config.quiet {
+            eprintln!("All threads ready. Starting benchmark for {}...", 
+                     humantime::format_duration(self.config.duration));
+        }
+        
+        // Start progress reporting task if not quiet
+        let progress_task = if !self.config.quiet && self.config.duration.as_secs() >= 5 {
+            let stats = Arc::clone(&self.stats);
+            let duration = self.config.duration;
+            let verbose = self.config.verbose;
+            
+            Some(tokio::spawn(async move {
+                let mut interval = interval(Duration::from_secs(1));
+                let start = Instant::now();
+                
+                loop {
+                    interval.tick().await;
+                    let elapsed = start.elapsed();
+                    
+                    if elapsed >= duration {
+                        break;
+                    }
+                    
+                    let requests = stats.get_requests();
+                    let success = stats.get_success();
+                    let failures = stats.get_failures();
+                    
+                    let remaining = duration - elapsed;
+                    
+                    if verbose {
+                        eprint!("\r[{:>3}s] Requests: {} | Success: {} | Failures: {} | Remaining: {}s    ",
+                               elapsed.as_secs(), requests, success, failures, remaining.as_secs());
+                    } else {
+                        eprint!("\r[{:>3}s] Requests: {} | Remaining: {}s    ",
+                               elapsed.as_secs(), requests, remaining.as_secs());
+                    }
+                    use std::io::{self, Write};
+                    io::stderr().flush().unwrap();
+                }
+            }))
+        } else {
+            None
+        };
+        
         // Wait for benchmark duration
         tokio::time::sleep(self.config.duration).await;
+        
+        // Cancel progress reporting
+        if let Some(task) = progress_task {
+            task.abort();
+        }
+        
+        // Clear progress line
+        if !self.config.quiet {
+            eprintln!("\rBenchmark completed. Processing results...                    ");
+        }
         
         // Signal stop to all threads
         stop_barrier.wait().await;

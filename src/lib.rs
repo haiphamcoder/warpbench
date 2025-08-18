@@ -25,6 +25,8 @@ pub struct Config {
     pub rate_limit: Option<u64>, // requests per second
     pub method: String,
     pub body: Option<String>,
+    pub verbose: bool,
+    pub quiet: bool,
 }
 
 impl Default for Config {
@@ -41,6 +43,8 @@ impl Default for Config {
             rate_limit: None,
             method: "GET".to_string(),
             body: None,
+            verbose: false,
+            quiet: false,
         }
     }
 }

@@ -1,10 +1,23 @@
 use std::time::Duration;
 use url::Url;
 use warpbench::{load_generator::LoadGenerator, metrics::MetricsReporter, Config};
+use tracing::{info, warn, Level};
+use tracing_subscriber::FmtSubscriber;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    tracing_subscriber::fmt::init();
+    // Initialize clean logging for examples
+    let subscriber = FmtSubscriber::builder()
+        .with_max_level(Level::INFO)
+        .with_target(false)
+        .with_thread_ids(false)
+        .with_thread_names(false)
+        .with_file(false)
+        .with_line_number(false)
+        .finish();
+    
+    tracing::subscriber::set_global_default(subscriber)
+        .expect("setting default subscriber failed");
 
     // High load configuration - be careful with this!
     let config = Config {
@@ -21,21 +34,23 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         rate_limit: Some(1000), // 1000 requests per second
         method: "GET".to_string(),
         body: None,
+        verbose: false,
+        quiet: false,
     };
 
-    println!("WARNING: This is a high load test!");
-    println!("Target: {}", config.url);
-    println!("Connections: {}", config.connections);
-    println!("Threads: {}", config.threads);
-    println!("Rate limit: {:?} RPS", config.rate_limit);
-    println!("Duration: {:?}", config.duration);
+    warn!("WARNING: This is a high load test!");
+    info!("Target: {}", config.url);
+    info!("Connections: {}", config.connections);
+    info!("Threads: {}", config.threads);
+    info!("Rate limit: {:?} RPS", config.rate_limit);
+    info!("Duration: {:?}", config.duration);
     
-    println!("\nMake sure you have permission to test the target server!");
-    println!("Press Ctrl+C to cancel or wait 5 seconds to continue...");
+    warn!("Make sure you have permission to test the target server!");
+    warn!("Press Ctrl+C to cancel or wait 5 seconds to continue...");
     
     tokio::time::sleep(Duration::from_secs(5)).await;
     
-    println!("Starting high load test...");
+    info!("Starting high load test...");
 
     let load_generator = LoadGenerator::new(config)?;
     let result = load_generator.run().await?;
@@ -43,7 +58,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let reporter = MetricsReporter::new();
     reporter.report(&result);
 
-    println!("\nHigh load test completed!");
+    info!("High load test completed successfully!");
 
     Ok(())
 }

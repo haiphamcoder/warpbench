@@ -54,6 +54,8 @@ warpbench http://example.com
 - `--rate-limit <RATE_LIMIT>`: Rate limit in requests per second
 - `-s, --script <SCRIPT>`: Rhai script file (currently disabled)
 - `--latency`: Print detailed latency statistics
+- `-v, --verbose`: Enable verbose logging (shows all INFO and DEBUG logs + detailed progress)
+- `-q, --quiet`: Quiet mode - only show benchmark results (no progress indicators)
 - `-h, --help`: Print help information
 - `-V, --version`: Print version information
 
@@ -95,6 +97,49 @@ warpbench https://api.example.com/endpoint \
   --timeout 10s \
   --latency
 ```
+
+Verbose logging for debugging:
+
+```bash
+warpbench https://httpbin.org/get -t 2 -c 5 -d 10s --verbose
+```
+
+Quiet mode (clean output):
+
+```bash
+warpbench https://httpbin.org/get -t 4 -c 50 -d 30s --quiet
+```
+
+## Progress Indicators
+
+WarpBench shows progress during execution to indicate that it's working:
+
+**Default mode:**
+
+```text
+Initializing WarpBench...
+Target: https://httpbin.org/get
+Configuration: 4 threads, 50 connections, 30s duration
+Setting up load generator...
+Starting 4 worker threads...
+All threads ready. Starting benchmark for 30s...
+[  2s] Requests: 45 | Remaining: 28s
+[  4s] Requests: 89 | Remaining: 26s
+[  6s] Requests: 134 | Remaining: 24s
+...
+Benchmark completed. Processing results...
+```
+
+**Verbose mode:**
+
+```text
+[  2s] Requests: 45 | Success: 42 | Failures: 3 | Remaining: 28s
+[  4s] Requests: 89 | Success: 85 | Failures: 4 | Remaining: 26s
+```
+
+**Quiet mode:**
+
+- No progress indicators, only final results
 
 ## Output Format
 
@@ -184,10 +229,28 @@ fn response(res) {
 
 If you encounter issues:
 
-1. Run with `RUST_LOG=debug` for detailed logging
+1. Use `--verbose` flag for detailed logging: `warpbench <url> --verbose`
 2. Try with minimal settings first: `warpbench <url> -t 1 -c 1 -d 5s`
-3. Check the [Issues](https://github.com/haiphamcoder/warpbench/issues) page
-4. Create a new issue with your command and error output
+3. For clean output without logs, use `--quiet` flag
+4. Check the [Issues](https://github.com/haiphamcoder/warpbench/issues) page
+5. Create a new issue with your command and error output
+
+## Run Examples
+
+The `examples/` directory contains several usage examples:
+
+- **`basic_usage.rs`**: Basic GET request with verbose logging
+- **`post_request.rs`**: POST request with JSON body
+- **`high_load.rs`**: High-load test with warnings and rate limiting
+- **`clean_output.rs`**: Clean output example (no logs, like CLI default)
+
+Run examples with:
+
+```bash
+cargo run --example basic_usage
+cargo run --example clean_output
+cargo run --example post_request
+```
 
 ## Contributing
 

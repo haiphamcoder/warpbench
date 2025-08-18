@@ -1,11 +1,23 @@
 use std::time::Duration;
 use url::Url;
 use warpbench::{load_generator::LoadGenerator, metrics::MetricsReporter, Config};
+use tracing::{info, Level};
+use tracing_subscriber::FmtSubscriber;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // Initialize tracing for logging
-    tracing_subscriber::fmt::init();
+    // Initialize clean logging for examples
+    let subscriber = FmtSubscriber::builder()
+        .with_max_level(Level::INFO)
+        .with_target(false)
+        .with_thread_ids(false)
+        .with_thread_names(false)
+        .with_file(false)
+        .with_line_number(false)
+        .finish();
+    
+    tracing::subscriber::set_global_default(subscriber)
+        .expect("setting default subscriber failed");
 
     // Create a basic configuration
     let config = Config {
@@ -23,13 +35,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         rate_limit: Some(100), // 100 requests per second
         method: "GET".to_string(),
         body: None,
+        verbose: false,
+        quiet: false,
     };
 
-    println!("Starting WarpBench example...");
-    println!("Target: {}", config.url);
-    println!("Duration: {:?}", config.duration);
-    println!("Connections: {}", config.connections);
-    println!("Threads: {}", config.threads);
+    info!("Starting WarpBench basic usage example");
+    info!("Target: {}", config.url);
+    info!("Duration: {:?}", config.duration);
+    info!("Connections: {}", config.connections);
+    info!("Threads: {}", config.threads);
 
     // Create and run the load generator
     let load_generator = LoadGenerator::new(config)?;
@@ -39,7 +53,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let reporter = MetricsReporter::new();
     reporter.report(&result);
 
-    println!("\nExample completed successfully!");
+    info!("Basic usage example completed successfully!");
 
     Ok(())
 }
