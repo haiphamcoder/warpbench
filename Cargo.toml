@@ -7,6 +7,18 @@ description = "A modern HTTP benchmarking tool written in Rust"
 license = "MIT"
 repository = "https://github.com/haiphamcoder/warpbench"
 
+[package.metadata.deb]
+maintainer = "Hai Pham Ngoc <ngochai285nd@gmail.com>"
+description = "A modern HTTP benchmarking tool written in Rust"
+license = "MIT"
+repository = "https://github.com/haiphamcoder/warpbench"
+section = "utils"
+priority = "optional"
+depends = ["libc6 (>= 2.31)"]
+assets = [
+    ["target/release/warpbench", "usr/bin/warpbench", "0755"]
+]
+
 [dependencies]
 # Error handling
 anyhow = "1.0.99"
