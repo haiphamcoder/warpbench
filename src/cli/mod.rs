@@ -36,6 +36,18 @@ pub struct Cli {
     /// Print latency statistics
     #[arg(long)]
     latency: bool,
+
+    /// HTTP method to use
+    #[arg(short = 'X', long, default_value = "GET")]
+    method: String,
+
+    /// Request body
+    #[arg(long)]
+    body: Option<String>,
+
+    /// Rate limit (requests per second)
+    #[arg(long)]
+    rate_limit: Option<u64>,
 }
 
 impl Cli {
@@ -68,6 +80,9 @@ impl Cli {
             headers,
             script_path: cli.script,
             show_latency: cli.latency,
+            rate_limit: cli.rate_limit,
+            method: cli.method,
+            body: cli.body,
         })
     }
 }

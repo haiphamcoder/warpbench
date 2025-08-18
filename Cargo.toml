@@ -28,6 +28,7 @@ rhai = "1.22.2"
 tokio = { version = "1.47.1", features = ["full"] }
 
 # Logging and tracing
+tracing = "0.1.41"
 tracing-subscriber = "0.3.19"
 
 # URL parsing
@@ -35,3 +36,29 @@ url = "2.5.4"
 
 # HTTP client
 hyper = { version = "1.6.0", features = ["full"] }
+hyper-util = { version = "0.1.10", features = ["full"] }
+http-body-util = "0.1.2"
+
+# TLS support
+hyper-rustls = { version = "0.27.3", default-features = false, features = ["http1", "http2", "ring", "tls12", "webpki-roots"] }
+
+# Async utilities
+futures = "0.3.31"
+tokio-util = "0.7.12"
+
+# Statistics and metrics
+hdrhistogram = "7.5.4"
+
+# Serialization
+serde = { version = "1.0.215", features = ["derive"] }
+serde_json = "1.0.133"
+
+# Random number generation
+rand = "0.9.2"
+
+# Atomic operations
+crossbeam = "0.8.4"
+arc-swap = "1.7.1"
+
+[dev-dependencies]
+tempfile = "3.14.0"
