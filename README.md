@@ -8,9 +8,12 @@
 ## Features
 
 - **High Performance**: Built with Rust and Tokio for asynchronous, high-concurrency benchmarking.
-- **Customizable Scenarios**: Use Rhai scripting to define complex request patterns and workflows.
-- **Detailed Metrics**: Collect and analyze metrics like latency, throughput, and error rates.
-- **Command-Line Interface**: Easy-to-use CLI for quick setup and execution.
+- **Multi-threaded**: Efficient load generation with configurable thread and connection pools.
+- **HTTP/HTTPS Support**: Full support for both HTTP and HTTPS with TLS.
+- **Detailed Metrics**: Collect and analyze metrics like latency percentiles, throughput, and error rates.
+- **Rate Limiting**: Control request rate to avoid overwhelming target servers.
+- **Flexible Configuration**: Customizable headers, methods, request bodies, and timeouts.
+- **wrk-compatible**: Familiar command-line interface and output format.
 - **Cross-Platform**: Runs on Linux, macOS, and Windows.
 
 ## Installation
@@ -36,42 +39,155 @@ Pre-built binaries will be available for download from the [GitHub Releases](htt
 Run a simple benchmark against a target URL with default settings:
 
 ```bash
-warpbench run --url http://example.com
+warpbench http://example.com
 ```
 
-### Options
+### Command Line Options
 
-- `--threads`: Number of concurrent threads (default: number of CPU cores).
-- `--duration`: Duration of the benchmark in seconds (default: 30).
-- `--connections`: Total number of connections to open (default: 100).
-- `--script`: Path to a Rhai script for custom request scenarios.
+- `-t, --threads <THREADS>`: Number of threads to use (default: number of CPU cores)
+- `-c, --connections <CONNECTIONS>`: Number of connections to keep open (default: 10)
+- `-d, --duration <DURATION>`: Duration of the test, e.g. "10s", "2m", "1h" (default: 10s)
+- `--timeout <TIMEOUT>`: Request timeout (default: 2s)
+- `-H, --header <HEADER>`: Add header to request (can be used multiple times)
+- `-X, --method <METHOD>`: HTTP method to use (default: GET)
+- `--body <BODY>`: Request body for POST/PUT requests
+- `--rate-limit <RATE_LIMIT>`: Rate limit in requests per second
+- `-s, --script <SCRIPT>`: Rhai script file (currently disabled)
+- `--latency`: Print detailed latency statistics
+- `-h, --help`: Print help information
+- `-V, --version`: Print version information
 
-Example with custom options:
+### Examples
+
+Basic GET request:
 
 ```bash
-warpbench run --url http://example.com --threads 8 --duration 60 --connections 200
+warpbench https://httpbin.org/get -t 4 -c 50 -d 30s
 ```
 
-### Scripting
-
-WarpBench supports Rhai scripting for advanced benchmarking scenarios. Create a script file (e.g., `scenario.rhai`) and pass it with the `--script` option:
+POST request with JSON body:
 
 ```bash
-warpbench run --url http://example.com --script scenario.rhai
+warpbench https://httpbin.org/post \
+  -X POST \
+  -H "Content-Type: application/json" \
+  --body '{"message": "Hello, World!"}' \
+  -t 2 -c 10 -d 10s
 ```
 
-Example Rhai script:
+High-load test with rate limiting:
+
+```bash
+warpbench http://example.com \
+  --threads 8 \
+  --connections 200 \
+  --duration 60s \
+  --rate-limit 1000 \
+  --latency
+```
+
+Custom headers and timeout:
+
+```bash
+warpbench https://api.example.com/endpoint \
+  -H "Authorization: Bearer token123" \
+  -H "User-Agent: WarpBench/0.1.0" \
+  --timeout 10s \
+  --latency
+```
+
+## Output Format
+
+WarpBench provides detailed benchmark results in a format similar to wrk:
+
+```text
+============================================================
+Benchmark Results
+============================================================
+Running 30.00s test @ https://httpbin.org/get
+  4 threads and 50 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency   245.67ms  45.23ms  1.20s    68.00%
+    Req/Sec   52.30k    8.45k    65.00k   86.54%
+  1500000 requests in 30.00s, 1.23GB read
+Requests/sec: 50000.25
+Transfer/sec: 41.95MB
+
+Latency Distribution (with --latency flag)
+   50%  234.56ms
+   75%  267.89ms
+   90%  312.45ms
+   95%  378.92ms
+   99%  567.34ms
+  99.9% 891.23ms
+============================================================
+```
+
+## Scripting Support (Future)
+
+WarpBench is designed to support Rhai scripting for advanced benchmarking scenarios. This feature is currently disabled due to thread safety considerations but will be available in future releases.
+
+Planned scripting capabilities:
+
+- Custom request generation
+- Dynamic headers and bodies  
+- Response processing and validation
+- Custom metrics collection
+
+Example future script:
 
 ```rust
 fn request() {
-    let res = http_get("/api endpoint");
-    if res.status == 200 {
-        print("Success");
-    } else {
-        print("Failed");
+    let req = http_get("/api/endpoint");
+    set_header(req, "User-Agent", "WarpBench");
+    req
+}
+
+fn response(res) {
+    if get_status(res) == 200 {
+        log_metric("success_count", 1.0);
     }
 }
 ```
+
+## Performance Tips
+
+- **Threads**: Start with the number of CPU cores, adjust based on your workload
+- **Connections**: Balance between throughput and resource usage (typically 10-200)
+- **Rate Limiting**: Use `--rate-limit` to avoid overwhelming the target server
+- **Timeout**: Set reasonable timeouts based on expected response times
+- **Duration**: Longer tests (30s+) provide more stable results
+
+## Troubleshooting
+
+### Common Issues
+
+**High timeout rates:**
+
+- Increase `--timeout` value
+- Reduce number of connections with `-c`
+- Check network connectivity
+
+**Low throughput:**
+
+- Increase number of threads with `-t`
+- Increase connections with `-c`  
+- Check if rate limiting is too restrictive
+
+**Connection errors:**
+
+- Verify the target URL is accessible
+- Check firewall settings
+- Ensure the server can handle the connection load
+
+### Getting Help
+
+If you encounter issues:
+
+1. Run with `RUST_LOG=debug` for detailed logging
+2. Try with minimal settings first: `warpbench <url> -t 1 -c 1 -d 5s`
+3. Check the [Issues](https://github.com/haiphamcoder/warpbench/issues) page
+4. Create a new issue with your command and error output
 
 ## Contributing
 
